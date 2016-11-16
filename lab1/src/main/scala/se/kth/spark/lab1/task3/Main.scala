@@ -1,6 +1,8 @@
 package se.kth.spark.lab1.task3
 
 import org.apache.spark._
+import org.apache.spark.ml.regression.LinearRegression
+
 import org.apache.spark.sql.{SQLContext, DataFrame}
 import org.apache.spark.ml.tuning.CrossValidatorModel
 import org.apache.spark.ml.regression.LinearRegressionModel
@@ -18,7 +20,11 @@ object Main {
     val filePath = "src/main/resources/millionsong.txt"
     val obsDF: DataFrame = ???
 
-    val myLR = ???
+    val myLR = new LinearRegression()
+    .setMaxIter(10)
+    .setRegParam(0.3)
+    .setElasticNetParam(0.8)
+    
     val lrStage = ???
     val pipeline = ???
     val pipelineModel: PipelineModel = ???
