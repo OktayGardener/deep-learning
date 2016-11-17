@@ -18,15 +18,21 @@ case class Instance(label: Double, features: Vector)
 
 object Helper {
   def rmse(labelsAndPreds: RDD[(Double, Double)]): Double = {
-    ???
+    // foreach (map) pow(label - prediction, 2) div n, reduce sum
+    val rmse = labelsAndPreds.map(x => Math.pow(x._1 - x._2, 2)).reduce(_+_)
+    return scala.math.sqrt(rmse/labelsAndPreds.count)
   }
 
   def predictOne(weights: Vector, features: Vector): Double = {
-    ???
+    var result: Double = 0.0
+    
+    for(i <- 0 to (weights.size - 1)) result += weights.apply(i) * features.apply(i)
+    
+    return result
   }
 
   def predict(weights: Vector, data: RDD[Instance]): RDD[(Double, Double)] = {
-    ???
+    return data.map(d => (d.label, predictOne(weights, d.features)))
   }
 }
 
@@ -38,16 +44,19 @@ class MyLinearRegressionImpl(override val uid: String)
   override def copy(extra: ParamMap): MyLinearRegressionImpl = defaultCopy(extra)
 
   def gradientSummand(weights: Vector, lp: Instance): Vector = {
-    ???
+    val predict = Helper.predictOne(weights, lp.features)
+    val before = lp.label
+    return VectorHelper.dot(lp.features, (predict - before))
   }
 
   def gradient(d: RDD[Instance], weights: Vector): Vector = {
-    ???
+    return d.map(instance => gradientSummand(weights, instance)).reduce(VectorHelper.sum)
   }
 
   def linregGradientDescent(trainData: RDD[Instance], numIters: Int): (Vector, Array[Double]) = {
 
     val n = trainData.count()
+    println("Training Data Size is " + n)
     val d = trainData.take(1)(0).features.size
     var weights = VectorHelper.fill(d, 0)
     val alpha = 1.0
@@ -58,6 +67,7 @@ class MyLinearRegressionImpl(override val uid: String)
       val labelsAndPredsTrain = Helper.predict(weights, trainData)
       //compute this iteration's RMSE
       errorTrain(i) = Helper.rmse(labelsAndPredsTrain)
+      println("RMSE iteration num "+i+": " + errorTrain(i))
 
       //compute gradient
       val g = gradient(trainData, weights)
@@ -92,7 +102,6 @@ class MyLinearModelImpl(override val uid: String, val weights: Vector, val train
   override def copy(extra: ParamMap): MyLinearModelImpl = defaultCopy(extra)
 
   def predict(features: Vector): Double = {
-    println("Predicting")
     val prediction = Helper.predictOne(weights, features)
     prediction
   }
